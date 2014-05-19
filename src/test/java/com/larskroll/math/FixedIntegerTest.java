@@ -5,7 +5,7 @@
  */
 package com.larskroll.math;
 
-import static org.junit.Assert.*;
+import junit.framework.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -49,5 +49,39 @@ public class FixedIntegerTest {
             FixedInteger max = FixedInteger.max(i);
             assertEquals(max.inc(), zero);
         }
+    }
+    
+    @Test
+    public void subtractTest() {
+        for (int i = 1; i < BYTES; i++) {
+            FixedInteger zero = FixedInteger.zero(i);
+            FixedInteger one = FixedInteger.one(i);
+            byte[] twoB = new byte[i];
+            twoB[i-1] = 2;
+            FixedInteger two = new FixedInteger(twoB);
+            assertEquals(one.subtract(one), zero);
+            assertEquals(two.subtract(one), one);
+            FixedInteger max = FixedInteger.max(i);
+            assertEquals(zero.subtract(one), max);
+        }
+    }
+    
+    @Test
+    public void decrementTest() {
+        for (int i = 1; i < BYTES; i++) {
+            FixedInteger zero = FixedInteger.zero(i);
+            FixedInteger one = FixedInteger.one(i);
+            byte[] twoB = new byte[i];
+            twoB[i-1] = 2;
+            FixedInteger two = new FixedInteger(twoB);
+            assertEquals(one.decr(), zero);
+            assertEquals(two.decr(), one);
+            FixedInteger max = FixedInteger.max(i);
+            assertEquals(zero.decr(), max);
+        }
+    }
+    
+    private void assertEquals(Object is, Object expected) {
+        Assert.assertEquals(expected, is); // because I'm bad and do it wrong way around every time -.-
     }
 }

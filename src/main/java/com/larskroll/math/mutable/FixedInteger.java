@@ -10,7 +10,12 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
- * Provides unsigned integer of fixed number of bytes
+ * A mutable unsigned integer class with a fixed number of bytes.
+ *
+ * All arithmetic operations are subject to wrap around!
+ *
+ * All arithmetic operations are performed in place, and are hence not
+ * commutative.
  *
  * @author lkroll
  */
@@ -20,12 +25,24 @@ public class FixedInteger extends Number implements Serializable, Comparable<Fix
 
     private final byte[] bytes;
 
+    /**
+     * n byte constant 0
+     *
+     * @param n number of bytes
+     * @return
+     */
     public static FixedInteger zero(int n) {
         byte[] bytes = new byte[n];
         Arrays.fill(bytes, (byte) 0);
         return new FixedInteger(bytes);
     }
 
+    /**
+     * n byte constant 1
+     *
+     * @param n number of bytes
+     * @return
+     */
     public static FixedInteger one(int n) {
         byte[] bytes = new byte[n];
         Arrays.fill(bytes, (byte) 0);
@@ -33,23 +50,42 @@ public class FixedInteger extends Number implements Serializable, Comparable<Fix
         return new FixedInteger(bytes);
     }
 
+    /**
+     * Max value for n bytes
+     *
+     * In other words: n bytes of 0xFF
+     *
+     * @param n number of bytes
+     * @return
+     */
     public static FixedInteger max(int n) {
         byte[] bytes = new byte[n];
         Arrays.fill(bytes, (byte) INT_MASK);
         return new FixedInteger(bytes);
     }
 
+    /**
+     * Wrap the given bytes.
+     *
+     * @param bytes
+     */
     public FixedInteger(byte[] bytes) {
         this.bytes = bytes;
     }
 
+    /**
+     * Expose underlying byte array.
+     *
+     * @return
+     */
     public byte[] array() {
         return bytes;
     }
 
     /**
-     * Add in place
-     * @param num
+     * Add num to current value
+     *
+     * @param num value to add
      */
     public void add(FixedInteger num) {
         if (num.bytes.length != bytes.length) {
@@ -63,9 +99,78 @@ public class FixedInteger extends Number implements Serializable, Comparable<Fix
             bytes[index] = (byte) sum;
         }
     }
+
+    /**
+     * Add num to current value
+     *
+     * @param num value to add
+     */
+    public void add(com.larskroll.math.FixedInteger num) {
+        add(num.mutable());
+    }
     
     /**
-     * Increment by 1 in place
+     * Subtract num from current value
+     * 
+     * @param num value to subtract
+     */
+    public void subtract(FixedInteger num) {
+        FixedInteger numCopy = (FixedInteger) num.clone();
+        numCopy.neg();
+        add(numCopy);
+    }
+    
+    /**
+     * Subtract num from current value
+     * 
+     * @param num value to subtract
+     */
+    public void subtract(com.larskroll.math.FixedInteger num) {
+        subtract(num.mutable());
+    }
+    
+    /**
+     * Subtract current value from num
+     * 
+     * @param num value to subtract from
+     */
+    public void difference(com.larskroll.math.FixedInteger num) {
+        difference(num.mutable());
+    }
+    
+    /**
+     * Subtract current value from num
+     * 
+     * @param num value to subtract from
+     */
+    public void difference(FixedInteger num) {
+        neg();
+        add(num);
+    }
+
+    /**
+     * Gives an immutable value that wraps this value.
+     *
+     *
+     * NOT recommended unless you know what you are doing
+     *
+     * @return
+     */
+    public com.larskroll.math.FixedInteger immutable() {
+        return new com.larskroll.math.FixedInteger(this);
+    }
+
+    /**
+     * Gives an immutable value wrapping a copy of this value.
+     *
+     * @return
+     */
+    public com.larskroll.math.FixedInteger immutableCopy() {
+        return new com.larskroll.math.FixedInteger((FixedInteger) clone());
+    }
+
+    /**
+     * Increment value by 1
      */
     public void inc() {
         int index = bytes.length;
@@ -75,6 +180,31 @@ public class FixedInteger extends Number implements Serializable, Comparable<Fix
             sum = (bytes[index] & INT_MASK) + (sum >>> 8);
             bytes[index] = (byte) sum;
         }
+    }
+    
+    /**
+     * Decrement value by 1
+     */
+    public void decr() {
+        add(FixedInteger.max(bytes.length)); // -1 in two complement is the same as max value for unsigned
+    }
+
+    /**
+     * Replaces current value with its inverse
+     * 
+     * In other words: flips all bits.
+     */
+    public void invert() {
+        int curval;
+        for (int i = 0; i < bytes.length; i++) {
+            curval = bytes[i] & INT_MASK;
+            bytes[i] = (byte) (curval ^ 0xFF);
+        }
+    }
+    
+    void neg() {
+        invert();
+        inc();
     }
 
     @Override
@@ -135,7 +265,7 @@ public class FixedInteger extends Number implements Serializable, Comparable<Fix
         }
         return 0;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof FixedInteger) {
@@ -156,12 +286,12 @@ public class FixedInteger extends Number implements Serializable, Comparable<Fix
         byte[] newBytes = Arrays.copyOf(bytes, bytes.length);
         return new FixedInteger(newBytes);
     }
-    
+
     @Override
     public String toString() {
         return (new BigInteger(1, bytes)).toString();
     }
-    
+
     public String toString(int radix) {
         return (new BigInteger(1, bytes)).toString(radix);
     }
