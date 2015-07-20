@@ -246,6 +246,7 @@ public class FixedInteger extends Number implements Serializable, Comparable<Fix
         return (new BigInteger(1, bytes)).floatValue();
     }
 
+    @Override
     public int compareTo(FixedInteger o) {
         if (bytes.length < o.bytes.length) {
             return -1;
